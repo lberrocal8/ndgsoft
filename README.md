@@ -1,0 +1,2 @@
+# ndgsoft
+ App for waiters
