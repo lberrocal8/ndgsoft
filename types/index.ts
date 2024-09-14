@@ -4,7 +4,7 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
-export interface MesaContextType {
+export type MesaContextType = {
   mesaSeleccionada: number;
   setMesaSeleccionada: React.Dispatch<React.SetStateAction<number>>;
 }
