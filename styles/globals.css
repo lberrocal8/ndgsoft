@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+input[type=number] { -moz-appearance:textfield; }
+
+.overflow-y-auto::-webkit-scrollbar {
+  background-color: #000;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #000;
+  border-radius: 10px;
+}
