@@ -7,7 +7,7 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
 export type MesaContextType = {
   mesaSeleccionada: string;
   setMesaSeleccionada: React.Dispatch<React.SetStateAction<string>>;
-}
+};
 
 export type ProductosCarrito = {
   id: number;

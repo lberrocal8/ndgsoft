@@ -21,7 +21,6 @@ export const Navbar = () => {
 
   const handleLogout = () => {
     sessionStorage.clear();
-    localStorage.removeItem("ProductosBD");
     localStorage.removeItem("mesas");
     router.push("/");
   };
@@ -31,9 +30,6 @@ export const Navbar = () => {
       <NavbarContent justify="end">
         <NavbarItem>
           <div className="flex flex-row gap-2 align-middle">
-            {/*<Button isIconOnly variant="light" size="sm">
-              <ThemeSwitch />
-            </Button>*/}
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
