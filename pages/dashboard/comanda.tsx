@@ -21,7 +21,7 @@ interface Producto {
 
 // Tipo para el hook [carrito, setCarrito]
 interface ProductoCarrito extends Producto {
-  mesa: number,
+  mesa: string,
   cantidad: number;
   subtotal: number;
 }
@@ -101,7 +101,7 @@ export default function Comanda() {
   const getProductsCart = (mesaNumber: number): { [key: string]: ProductCart } => {
     const productsCart: { [key: string]: ProductCart } = {};
     carrito.forEach((item) => {
-      if (item.mesa === mesaNumber) {
+      if (parseInt(item.mesa) === mesaNumber) {
         const product = productosFromBD.find((p) => p.referencia === item.referencia);
         if (product) {
           productsCart[item.referencia] = {...product, cantidad: item.cantidad};
@@ -125,7 +125,7 @@ export default function Comanda() {
 
   // Funcion para calcular el total a pagar del carrito dependiendo de la mesa seleccionada
   const totalToPay = useMemo(() => {
-    const productsFromMesa = getProductsCart(mesaSeleccionada);
+    const productsFromMesa = getProductsCart(parseInt(mesaSeleccionada));
     return Object.values(productsFromMesa).reduce((acc, product) => acc + product.cantidad * product.vrventa, 0);
   }, [carrito, mesaSeleccionada]);
 
@@ -175,7 +175,7 @@ export default function Comanda() {
                         <div>
                           <div>
                             <div>
-                              {Object.values(getProductsCart(mesaSeleccionada)).map((producto, index) => (
+                              {Object.values(getProductsCart(parseInt(mesaSeleccionada))).map((producto, index) => (
                                 <Card className='mb-2' key={index}>
                                   <CardBody className='flex flex-row px-4 justify-between items-center'>
                                     <div className='flex flex-col gap-0 w-full'>
@@ -221,7 +221,7 @@ export default function Comanda() {
         <div>
           <div>
             <div className='mb-4 w-1/2 xxs:w-full'>
-              <div className='grid grid-cols-4 xxs:grid-cols-2 gap-2'>
+              <div className='grid md:grid-cols-4 xxs:grid-cols-2 gap-2'>
                 {items.map((item) => (
                   <Card className='w-full' key={item.idproducto}>
                     <CardBody>

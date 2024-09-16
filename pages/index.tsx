@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody } from "@nextui-org/card";
 import { Input } from "@nextui-org/input";
 
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/icons";
+import { version } from "@/package.json";
 
 const Login = () => {
   const [isVisible, setIsVisible] = React.useState(false);
@@ -55,7 +56,7 @@ const Login = () => {
       <Card>
         <CardHeader className="flex flex-col pt-8 pb-6 px-10 text-center">
           <h1 className="w-full text-primary-600 font-bold text-3xl">Iniciar sesión</h1>
-          <p className="w-full text-xs">Ingresa en el sistema NDG Soft</p>
+          <p className="w-full text-xs">Ingresa en el sistema Cursor</p>
         </CardHeader>
         <CardBody>
           <form onSubmit={handleSubmit}>
@@ -86,8 +87,13 @@ const Login = () => {
 
 export default function IndexPage() {
   return (
-    <section className="flex place-content-center mt-28 mb-0">
-      <Login />
-    </section>
+    <>
+      <section className="flex h-screen justify-center items-center">
+        <Login />
+      </section>
+      <footer className="fixed bottom-0 left-0 w-full p-4 text-center text-sm text-gray-600">
+        <p>Version v{version} | Todos los derechos reservados</p>
+      </footer>
+    </>
   );
 }

@@ -14,7 +14,7 @@ export default function Dashboard() {
     const token = sessionStorage.getItem('token');
     if (!token) {
       alert('No autorizado');
-      sessionStorage.removeItem('token');
+      sessionStorage.clear();
       router.push('/');
     }
 

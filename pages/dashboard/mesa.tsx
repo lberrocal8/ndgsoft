@@ -9,15 +9,17 @@ import { MesaContext } from '@/providers/mesaProvider';
 import { MesaContextType } from '@/types';
 
 export default function Mesa() {
-  const [numMesa, setNumMesa] = useState(0);
+  const [numMesa, setNumMesa] = useState(1);
   const {mesaSeleccionada, setMesaSeleccionada} = useContext(MesaContext) as MesaContextType;
 
   useEffect(() => {
-    const mesas = JSON.parse(localStorage.getItem('mesas') || '[]');
-    if (mesas.length === 0) {
-      localStorage.setItem('mesas', JSON.stringify([{ id: 1 }]));
-    }
-    setNumMesa(mesas.length);
+    setTimeout(() => {
+      const mesas = JSON.parse(localStorage.getItem('mesas') || '[]');
+      if (mesas.length === 0) {
+        localStorage.setItem('mesas', JSON.stringify([{ id: 1 }]));
+      }
+      setNumMesa(mesas.length);
+    }, 1000);
   }, []);
 
   const handleChangeMesaSeleccionada = (key: any) => {
