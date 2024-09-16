@@ -5,7 +5,6 @@ import { Button } from "@nextui-org/button"
 import { Card, CardHeader, CardBody } from "@nextui-org/card";
 import { Input } from "@nextui-org/input";
 
-import DefaultLayout from "@/layouts/default";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/icons";
 
 const Login = () => {
