@@ -1,5 +1,5 @@
 'use client'
-import React, { useContext, useEffect, useState, useMemo } from 'react';
+import React, { useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { Badge } from "@nextui-org/badge";
 import { Button } from '@nextui-org/button';
 import { Card, CardFooter, CardBody } from "@nextui-org/card";
@@ -21,6 +21,7 @@ interface Producto {
 
 // Tipo para el hook [carrito, setCarrito]
 interface ProductoCarrito extends Producto {
+  mesa: number,
   cantidad: number;
   subtotal: number;
 }
@@ -46,8 +47,10 @@ export default function Comanda() {
 
   // Hook que monta los productos una vez se renderiza el componente
   useEffect(() => {
-    const productos = JSON.parse(localStorage.getItem('ProductosBD') || '[]');
-    setProductosFromBD(productos);
+    setTimeout(() => {
+      const productos = JSON.parse(localStorage.getItem('ProductosBD') || '[]');
+      setProductosFromBD(productos);
+    }, 500);
   }, []);
 
   // Funcion para evaluar el cambio en el input de busqueda
@@ -85,17 +88,24 @@ export default function Comanda() {
   // Funcion que envia los productos seleccionados al carrito
   let currentIndex = 0;
   const handleConfirmProductSelected = (idproducto: number, referencia: number, descripcion: string, vrventa: number, cantidad: number) => {
-    setCarrito((prevCart) => [ ...prevCart, { idproducto, referencia, descripcion, vrventa, mesa: mesaSeleccionada, cantidad, subtotal: cantidadProducto*vrventa} ]);
+    const isProductExist = carrito.find((item) => item.referencia === referencia && item.mesa === mesaSeleccionada);
+    if (!isProductExist) {
+      setCarrito((prevCart) => [ ...prevCart, { idproducto, referencia, descripcion, vrventa, mesa: mesaSeleccionada, cantidad, subtotal: cantidadProducto*vrventa} ]);
+    } else {
+      alert('El producto ya esta en el carrito...');
+    }
     currentIndex++;
   };
 
-  // Funcion para buscar los productos seleccionados en el carrito en productosFromBD
-  const getProductsCart = (): { [key: string]: ProductCart } => {
+  // Funcion para buscar los productos seleccionados en el carrito en productosFromBD dependiendo de la mesa seleccionada
+  const getProductsCart = (mesaNumber: number): { [key: string]: ProductCart } => {
     const productsCart: { [key: string]: ProductCart } = {};
     carrito.forEach((item) => {
-      const product = productosFromBD.find((p) => p.referencia === item.referencia);
-      if (product) {
-        productsCart[item.referencia] = {...product, cantidad: item.cantidad};
+      if (item.mesa === mesaNumber) {
+        const product = productosFromBD.find((p) => p.referencia === item.referencia);
+        if (product) {
+          productsCart[item.referencia] = {...product, cantidad: item.cantidad};
+        }
       }
     });
     return productsCart;
@@ -113,11 +123,11 @@ export default function Comanda() {
     );
   };
 
-  // Funcion para calcular el total a pagar del carrito
+  // Funcion para calcular el total a pagar del carrito dependiendo de la mesa seleccionada
   const totalToPay = useMemo(() => {
-    const arrayCarrito = Array.isArray(carrito) ? carrito : [];
-    return arrayCarrito.reduce((acc, item) => acc + item.subtotal, 0);
-  }, [carrito]);
+    const productsFromMesa = getProductsCart(mesaSeleccionada);
+    return Object.values(productsFromMesa).reduce((acc, product) => acc + product.cantidad * product.vrventa, 0);
+  }, [carrito, mesaSeleccionada]);
 
   // Funcion para incrementar la cantidad de un item dentro del carrito
   const incrementarCantidad = (referencia: number) => {
@@ -143,27 +153,29 @@ export default function Comanda() {
     );
   };
 
-  // Funcion para contar los item que estan en el carrito
-  const carritoLength = useMemo(() => carrito.length, [carrito]);  
-  
+  // Funcion para contar los item que estan en el carrito dependiendo de la mesa seleccionada
+  const carritoLength = useMemo(() => {
+    return carrito.filter((item) => item.mesa === mesaSeleccionada).length;
+  }, [carrito, mesaSeleccionada]);
+
   return (
     <>
       <div className='w-1/2 xxs:w-full'>
-        <div className='flex justify-between mb-2 px-4'>
-          <h1 className="text-primary font-semibold text-xl px-2">Comanda: [mesa {mesaSeleccionada}]</h1>
-          <Badge content={carritoLength} color='primary'>
+        <div className='flex justify-between mb-2'>
+        <Input isClearable className="w-full mb-4 px-2" type='text' placeholder="Buscar por nombre de producto" value={filterValue} onClear={() => {setFilterValue(''); setPage(1)}} onValueChange={onSearchChange} startContent={<SearchIcon />} />
+          <Badge content={carritoLength} color='danger'>
             <Button isIconOnly variant='light' size='sm' color='primary' onPress={onOpen}>
               <ShoppingCart />
               <Modal isOpen={isOpen} onOpenChange={onOpenChange} hideCloseButton>
                 <ModalContent>
                   {(onClose) => (
                     <>
-                      <ModalHeader className='mt-2'>Comanda de mesa: {mesaSeleccionada}</ModalHeader>
+                      <ModalHeader className='mt-2'>Comanda de la mesa {mesaSeleccionada}</ModalHeader>
                       <ModalBody>
                         <div>
                           <div>
                             <div>
-                              {Object.values(getProductsCart()).map((producto, index) => (
+                              {Object.values(getProductsCart(mesaSeleccionada)).map((producto, index) => (
                                 <Card className='mb-2' key={index}>
                                   <CardBody className='flex flex-row px-4 justify-between items-center'>
                                     <div className='flex flex-col gap-0 w-full'>
@@ -208,9 +220,6 @@ export default function Comanda() {
         </div>
         <div>
           <div>
-            <Input isClearable className="w-full mb-4" type='text' placeholder="Buscar por nombre de producto" value={filterValue} onClear={() => {setFilterValue(''); setPage(1)}} onValueChange={onSearchChange} startContent={<SearchIcon />} />
-          </div>
-          <div>
             <div className='mb-4 w-1/2 xxs:w-full'>
               <div className='grid grid-cols-4 xxs:grid-cols-2 gap-2'>
                 {items.map((item) => (
@@ -222,7 +231,7 @@ export default function Comanda() {
                     </CardBody>
                     <CardFooter className='flex flex-row items-center justify-between'>
                       <p className='text-xs font-light'>{item.vrventa.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</p>
-                      <Input name={'cant'+item.idproducto} type='number' size='sm' variant='bordered' className='w-1/3' onChange={(e) => handleChangeCantidad(parseInt(e.target.value, 10) || 0)} />
+                      <Input isRequired name={'cant'+item.idproducto} type='number' size='sm' variant='bordered' className='w-1/3' onChange={(e) => handleChangeCantidad(parseInt(e.target.value, 10) || 0)} />
                       <Button isIconOnly variant='light' color='primary' size='sm' onPress={() => handleConfirmProductSelected(item.idproducto, item.referencia, item.descripcion, item.vrventa, cantidadProducto)}>
                         <AddCircleIcon />
                       </Button>

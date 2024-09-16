@@ -9,13 +9,16 @@ import { MesaContext } from '@/providers/mesaProvider';
 import { MesaContextType } from '@/types';
 
 export default function Mesa() {
-  const [numMesa, setNumMesa] = useState(1);
+  const [numMesa, setNumMesa] = useState(0);
   const {mesaSeleccionada, setMesaSeleccionada} = useContext(MesaContext) as MesaContextType;
 
   useEffect(() => {
     const mesas = JSON.parse(localStorage.getItem('mesas') || '[]');
+    if (mesas.length === 0) {
+      localStorage.setItem('mesas', JSON.stringify([{ id: 1 }]));
+    }
     setNumMesa(mesas.length);
-  }, [mesaSeleccionada]);
+  }, []);
 
   const handleChangeMesaSeleccionada = (key: any) => {
     setMesaSeleccionada(key);
@@ -33,9 +36,9 @@ export default function Mesa() {
       <div className='flex gap-4 items-center'>
         <Dropdown>
           <DropdownTrigger>
-            <Button variant="ghost" color='primary'>Activa una mesa</Button>
+            <Button variant="ghost" color='primary'>Mesa {mesaSeleccionada}</Button>
           </DropdownTrigger>
-          <DropdownMenu aria-label="Static Actions" onAction={(key) => handleChangeMesaSeleccionada(key)}>
+          <DropdownMenu aria-label="Static Actions" onAction={(key) => handleChangeMesaSeleccionada(key)} emptyContent='Sin mesas que mostrar. Agrega una mesa.'>
             {Array.from(Array(numMesa).keys()).map((id) => (
               <DropdownItem key={id + 1}>{id + 1}</DropdownItem>
             ))}

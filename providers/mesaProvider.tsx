@@ -4,12 +4,12 @@ import React, { useState } from "react";
 import { MesaContextType } from "@/types";
 
 const MesaContext = React.createContext<MesaContextType>({
-  mesaSeleccionada: 0,
+  mesaSeleccionada: 1,
   setMesaSeleccionada: () => {},
 });
 
 const MesaProvider = ({ children }: { children: React.ReactNode }) => {
-  const [mesaSeleccionada, setMesaSeleccionada] = useState<number>(0);
+  const [mesaSeleccionada, setMesaSeleccionada] = useState<number>(1);
 
   return (
     <MesaContext.Provider value={{ mesaSeleccionada, setMesaSeleccionada }}>
