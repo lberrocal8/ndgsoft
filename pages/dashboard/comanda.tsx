@@ -50,7 +50,7 @@ export default function Comanda() {
     setTimeout(() => {
       const productos = JSON.parse(localStorage.getItem('ProductosBD') || '[]');
       setProductosFromBD(productos);
-    }, 500);
+    }, 1500);
   }, []);
 
   // Funcion para evaluar el cambio en el input de busqueda
