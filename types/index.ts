@@ -4,19 +4,10 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
-export type MesaContextType = {
+export interface MesaContextType {
   mesaSeleccionada: string;
   setMesaSeleccionada: React.Dispatch<React.SetStateAction<string>>;
-};
-
-export type ProductosCarrito = {
-  id: number;
-  Referencia: string;
-  Descripcion: string;
-  VrVenta: number;
-  Cantidad: number;
-  Mesa: string;
-};
+}
 
 export type Factura = {
   ResoFacturas: string;

@@ -9,11 +9,15 @@ const login = async (req: NextApiRequest, res: NextApiResponse) => {
     // Inicia sesión
     const user = await authenticate(username, password);
 
+    const activeName = user.Nombre;
+    const activeUser = user.Usuario;
+    const activeType = user.Tipo;
+
     if (user) {
       // Devuelve el token de sesión
       const token = await generateToken(user);
 
-      res.json({ token });
+      res.json({ token, activeUser, activeName, activeType });
     } else {
       res.status(401).json({ error: "Credenciales inválidas" });
     }

@@ -1,41 +1,33 @@
 "use client";
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 import DefaultLayout from "@/layouts/default";
 import Comanda from "@/pages/dashboard/comanda";
 import Mesa from "@/pages/dashboard/mesa";
 import { supabase } from "@/utils/supabase";
+import GetUser from "@/utils/getuser";
 
 export default function Dashboard() {
-  const router = useRouter();
+  async function fetchData() {
+    try {
+      const { data: Mercancia } = await supabase.rpc("rownumbermercancia");
+
+      if (Mercancia.length > 0) {
+        localStorage.setItem("ProductosBD", JSON.stringify(Mercancia));
+      }
+    } catch (error) {
+      return "Error al solicitar los productos a la base de datos";
+    }
+  }
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
-
-    if (!token) {
-      alert("No autorizado");
-      sessionStorage.clear();
-      router.push("/");
-    }
-
-    async function fetchData() {
-      try {
-        const { data: Mercancia } = await supabase.rpc("rownumbermercancia");
-
-        if (Mercancia.length > 0) {
-          localStorage.setItem("ProductosBD", JSON.stringify(Mercancia));
-        }
-      } catch (error) {
-        return "Error al solicitar los productos a la base de datos";
-      }
-    }
+    GetUser;
     fetchData();
   }, []);
 
   return (
     <DefaultLayout>
-      <section className="flex flex-col items-center justify-center mb-6">
+      <section className="flex flex-col justify-center mt-2 mb-6">
         <Mesa />
       </section>
       <section className="flex flex-col items-center justify-center">

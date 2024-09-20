@@ -18,3 +18,7 @@ input[type=number] { -moz-appearance:textfield; }
   background-color: #000;
   border-radius: 10px;
 }
+
+.no-shadow-modal {
+  box-shadow: none !important;
+}

@@ -1,5 +1,11 @@
 "use client";
-import React, { useContext, useEffect, useState, useMemo } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { Badge } from "@nextui-org/badge";
 import { Button } from "@nextui-org/button";
 import { Card, CardFooter, CardBody } from "@nextui-org/card";
@@ -24,6 +30,9 @@ import {
 } from "@/components/icons";
 import { MesaContext } from "@/providers/mesaProvider";
 import { MesaContextType } from "@/types";
+import { supabase } from "@/utils/supabase";
+import notify from "@/utils/notify";
+import GetUser from "@/utils/getuser";
 
 // Tipo para el hook [productosFromBD, setProductosFromBD]
 interface Producto {
@@ -49,9 +58,7 @@ interface ProductCart {
 }
 
 export default function Comanda() {
-  const { mesaSeleccionada } = useContext(
-    MesaContext,
-  ) as MesaContextType;
+  const { mesaSeleccionada } = useContext(MesaContext) as MesaContextType;
   const { isOpen, onOpen, onOpenChange } = useDisclosure(); // State para abrir el carrito
   const [productosFromBD, setProductosFromBD] = useState<Producto[]>([]); // State para cargar los productos que vienen de la base de datos
   const [carrito, setCarrito] = useState<ProductoCarrito[]>([]); // State para guardar el producto seleccionado en una comanda
@@ -59,19 +66,58 @@ export default function Comanda() {
   const [rowsPerPage] = useState<number>(8); // State para establecer cuantos items se van a mostrar en cada pagina
   const [page, setPage] = useState<number>(1); // State para la paginacion de la tabla productos
   const [cantidadProducto, setCantidadProducto] = useState<number>(0); // State para establecer la cantidad de producto a agregar al carrito (el valor es global y cambia al ingresar otra cantidad)
+  const [observacion, setObservacion] = useState<string>("");
+  const [ultimaFacturaLocal, setUltimaFacturaLocal] = useState<number>(1);
+
   const hasSearchFilter = Boolean(filterValue);
+
+  // Funcion para consultar el numero de la ultima factura de registrada en bd
+  async function ultimaFactura() {
+    GetUser;
+    try {
+      const { data: Comanda } = await supabase
+        .from("Comanda")
+        .select("idComanda")
+        .order("idComanda", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (Comanda !== null) {
+        localStorage.setItem(
+          "ultimaComanda",
+          JSON.stringify(Comanda.idComanda),
+        );
+      }
+    } catch (error) {
+      notify("error", `${error}`);
+    }
+  }
 
   // Hook que monta los productos una vez se renderiza el componente
   useEffect(() => {
-    setTimeout(() => {
-      const productos = JSON.parse(localStorage.getItem("ProductosBD") || "[]");
+    const productos = JSON.parse(localStorage.getItem("ProductosBD") || "[]");
 
-      setProductosFromBD(productos);
-    }, 1500);
+    setProductosFromBD(productos);
+
+    ultimaFactura();
+    supabase
+      .channel("comandas-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "Comanda",
+        },
+        () => {
+          ultimaFactura();
+        },
+      )
+      .subscribe();
   }, []);
 
   // Funcion para evaluar el cambio en el input de busqueda
-  const onSearchChange = React.useCallback((value?: string) => {
+  const onSearchChange = useCallback((value?: string) => {
     if (value) {
       setFilterValue(value);
       setPage(1);
@@ -81,7 +127,7 @@ export default function Comanda() {
   }, []);
 
   // Funcion que filtra los productos segun el valor del campo de busqueda
-  const filteredItems = React.useMemo<Producto[]>(() => {
+  const filteredItems = useMemo<Producto[]>(() => {
     let filteredProducts = [...productosFromBD];
 
     if (hasSearchFilter) {
@@ -94,7 +140,7 @@ export default function Comanda() {
   }, [productosFromBD, filterValue]);
 
   // Funcion que muestra los productos segun el campo de busqueda
-  const items = React.useMemo<Producto[]>(() => {
+  const items = useMemo<Producto[]>(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
 
@@ -104,7 +150,6 @@ export default function Comanda() {
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
   // Funcion que envia los productos seleccionados al carrito
-  let currentIndex = 0;
   const handleConfirmProductSelected = (
     idproducto: number,
     referencia: number,
@@ -112,6 +157,7 @@ export default function Comanda() {
     vrventa: number,
     cantidad: number,
   ) => {
+    let currentIndex = 0;
     const isProductExist = carrito.find(
       (item) =>
         item.referencia === referencia && item.mesa === mesaSeleccionada,
@@ -131,9 +177,9 @@ export default function Comanda() {
         },
       ]);
     } else {
-      alert("El producto ya esta en el carrito...");
+      notify("info", "El producto ya esta en el carrito");
     }
-    currentIndex++;
+    currentIndex = currentIndex + 1;
   };
 
   // Funcion para buscar los productos seleccionados en el carrito en productosFromBD dependiendo de la mesa seleccionada
@@ -161,8 +207,12 @@ export default function Comanda() {
   };
 
   // Funcion para interactuar con la cantidad de producto de forma global y mutable
-  const handleChangeCantidad = (value: number) => {
-    setCantidadProducto(value);
+  const handleChangeCantidad = (value: string) => {
+    if (value === "") {
+      setCantidadProducto(1);
+    } else {
+      setCantidadProducto(parseInt(value, 10) || 1);
+    }
   };
 
   // Funcion para remover productos del carrito
@@ -212,6 +262,76 @@ export default function Comanda() {
     );
   };
 
+  // Manejador para el cambio del input de observacion de forma global y mutable
+  const handleChangeObservacion = (value: string) => {
+    setObservacion(value);
+  };
+
+  // Funcion para enviar el pedido a la API
+  const enviarPedido = async () => {
+    GetUser;
+    const consecutivo = ultimaFacturaLocal;
+    const productos = carrito.filter((item) => item.mesa === mesaSeleccionada);
+
+    try {
+      const total = totalToPay;
+      const empleado = localStorage.getItem("activeUser");
+      const fecha = new Date();
+      const facturaToAPI = {
+        productos,
+        observacion,
+        total,
+        empleado,
+        consecutivo,
+        fecha,
+      };
+
+      await fetch("/api/facturas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facturaToAPI }),
+      }).then((response) => {
+        if (response.ok) {
+          notify("success", "Comanda registrada correctamente");
+          ultimaFactura();
+
+          setCarrito((prevCarrito) =>
+            prevCarrito.filter((item) => item.mesa !== mesaSeleccionada),
+          );
+        }
+      });
+    } catch (error) {
+      notify("error", `${error}`);
+    }
+  };
+
+  // Manejador combinado
+  const fetchAPI = () => {
+    const cart = carrito.filter((item) => item.mesa === mesaSeleccionada);
+
+    for (const item of cart) {
+      if (item.cantidad === 0) {
+        notify("error", "La cantidad de producto no puede ser cero");
+
+        return;
+      }
+    }
+    enviarPedido();
+  };
+
+  // Obtener la ultima factura registrada en bd del localStorage
+  const handleUltimaFacturaLocal = () => {
+    const ultima: number = JSON.parse(
+      localStorage.getItem("ultimaComanda") || "[]",
+    );
+
+    if (ultima === 1) {
+      setUltimaFacturaLocal(ultima);
+    } else {
+      setUltimaFacturaLocal(ultima + 1);
+    }
+  };
+
   // Funcion para contar los item que estan en el carrito dependiendo de la mesa seleccionada
   const carritoLength = useMemo(() => {
     return carrito.filter((item) => item.mesa === mesaSeleccionada).length;
@@ -220,10 +340,10 @@ export default function Comanda() {
   return (
     <>
       <div className="w-1/2 xxs:w-full">
-        <div className="flex justify-between mb-2">
+        <div className="flex justify-between mb-4">
           <Input
             isClearable
-            className="w-full mb-4 px-2"
+            className="w-full pr-2"
             placeholder="Buscar por nombre de producto"
             startContent={<SearchIcon />}
             type="text"
@@ -238,9 +358,11 @@ export default function Comanda() {
             <Button
               isIconOnly
               color="primary"
-              size="sm"
               variant="light"
-              onPress={onOpen}
+              onPress={() => {
+                handleUltimaFacturaLocal();
+                onOpen();
+              }}
             >
               <ShoppingCart />
               <Modal
@@ -251,8 +373,11 @@ export default function Comanda() {
                 <ModalContent>
                   {(onClose) => (
                     <>
-                      <ModalHeader className="mt-2">
-                        Comanda de la mesa {mesaSeleccionada}
+                      <ModalHeader className="flex flex-col mt-2 mx-1 align-middle">
+                        <p>Comanda de la mesa {mesaSeleccionada}</p>
+                        <p className="text-xs font-thin">
+                          Factura Nro. {ultimaFacturaLocal}
+                        </p>
                       </ModalHeader>
                       <ModalBody>
                         <div>
@@ -334,6 +459,9 @@ export default function Comanda() {
                           label="Observaciones"
                           maxRows={3}
                           placeholder="¿Salchipapa sin verduras? ¿Jugo sin azucar?"
+                          onChange={(e) =>
+                            handleChangeObservacion(e.target.value)
+                          }
                         />
                         <div className="flex px-4 text-center justify-between items-center align-middle">
                           <p className="text-xs font-bold">Total a pagar:</p>
@@ -347,7 +475,14 @@ export default function Comanda() {
                         </div>
                       </ModalBody>
                       <ModalFooter>
-                        <Button color="primary" size="sm" onPress={onClose}>
+                        <Button
+                          color="primary"
+                          size="sm"
+                          onPress={() => {
+                            fetchAPI();
+                            onClose();
+                          }}
+                        >
                           Confirmar pedido
                         </Button>
                       </ModalFooter>
@@ -386,11 +521,7 @@ export default function Comanda() {
                         size="sm"
                         type="number"
                         variant="bordered"
-                        onChange={(e) =>
-                          handleChangeCantidad(
-                            parseInt(e.target.value, 10) || 0,
-                          )
-                        }
+                        onChange={(e) => handleChangeCantidad(e.target.value)}
                       />
                       <Button
                         isIconOnly

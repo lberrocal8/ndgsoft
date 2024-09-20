@@ -41,15 +41,15 @@ export default function Mesa() {
 
   return (
     <>
-      <div className="flex gap-4 items-center">
+      <div className="flex justify-between">
         <Dropdown>
           <DropdownTrigger>
-            <Button color="primary" variant="ghost">
+            <Button className="w-full mr-2" color="primary">
               Mesa {mesaSeleccionada}
             </Button>
           </DropdownTrigger>
           <DropdownMenu
-            aria-label="Static Actions"
+            aria-label="Mesas activas"
             emptyContent="Sin mesas que mostrar. Agrega una mesa."
             onAction={(key) => handleChangeMesaSeleccionada(key)}
           >
@@ -59,7 +59,7 @@ export default function Mesa() {
           </DropdownMenu>
         </Dropdown>
         <Tooltip content="Agrega una mesa">
-          <Button isIconOnly size="sm" variant="light" onPress={handleAddMesa}>
+          <Button isIconOnly variant="light" onPress={handleAddMesa}>
             <MesaAddIcon />
           </Button>
         </Tooltip>

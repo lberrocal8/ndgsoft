@@ -6,7 +6,8 @@ import { Card, CardHeader, CardBody } from "@nextui-org/card";
 import { Input } from "@nextui-org/input";
 
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/icons";
-import { version } from "@/package.json";
+import notify from "@/utils/notify";
+import { siteConfig } from "@/config/site";
 
 const Login = () => {
   const [isVisible, setIsVisible] = React.useState(false);
@@ -37,10 +38,13 @@ const Login = () => {
       const jsonData = await response.json();
 
       if (jsonData) {
+        localStorage.setItem("activeUser", jsonData.activeUser);
+        localStorage.setItem("activeName", jsonData.activeName);
+        localStorage.setItem("activeType", jsonData.activeType);
         sessionStorage.setItem("token", jsonData.token);
         router.push("/dashboard");
       } else {
-        alert("Credenciales invalidas");
+        notify("error", "Credenciales invalidas");
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -55,7 +59,7 @@ const Login = () => {
     <>
       <Card>
         <CardHeader className="flex flex-col pt-8 pb-6 px-10 text-center">
-          <h1 className="w-full text-primary-600 font-bold text-3xl">
+          <h1 className="w-full text-primary font-bold text-3xl">
             Iniciar sesión
           </h1>
           <p className="w-full text-xs">Ingresa en el sistema Cursor</p>
@@ -116,7 +120,7 @@ export default function IndexPage() {
         <Login />
       </section>
       <footer className="fixed bottom-0 left-0 w-full p-4 text-center text-sm text-gray-600">
-        <p>Version v{version} | Todos los derechos reservados</p>
+        <p>Versión v{siteConfig.version} | Todos los derechos reservados</p>
       </footer>
     </>
   );
