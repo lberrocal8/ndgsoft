@@ -59,13 +59,16 @@ export default function Pedidos() {
 
   const fetchComandas = async () => {
     try {
-      const { data: Comanda } = await supabase.from("Comanda").select();
+      const { data: Comanda } = await supabase
+        .from("Comanda")
+        .select()
+        .order("idComanda", { ascending: false });
 
       if (Comanda) {
         setComandasFromBD(Comanda);
       }
     } catch (error) {
-      return "Error al solicitar los productos a la base de datos";
+      notify("error", "Error al cargar las comandas. Actualice la página");
     }
   };
 
